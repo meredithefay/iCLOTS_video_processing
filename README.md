@@ -1,5 +1,5 @@
 # iCLOTS_video_processing
-Scripts useful for microscopy image and video pre-processing. All materials are also available at github.com/LamLabEmory
+Scripts useful for microscopy image and video pre-processing. All materials are also maintained at github.com/LamLabEmory.
 These scripts have been designed specifically for use with iCLOTS software, a Lam lab project available at iCLOTS.org, but you might find them useful for other applications as well.
 Most methods rely heavily on OpenCV image processing library. Each script has information about inputs, parameters, and outputs and a "tips" section within the module docstrings. Briefly, users select a folder of .png, .jpg., .tif, and/or .avi files for modification. Users edit indicated parameters, some image processing step is applied, and all edited files are returned in a new directory within the original.
 
