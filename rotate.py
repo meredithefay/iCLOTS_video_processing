@@ -1,30 +1,39 @@
 """iCLOTS is a free software created for the analysis of common hematology workflow image data
 
 Author: Meredith Fay, Lam Lab, Georgia Institute of Technology and Emory University
-Last updated: 2022-05-09
+Last updated: 2022-07-12
 This script corresponds to tools available in version 1.0b1, more recent implementations of tools
 may be available within the iCLOTS software and in source code at github.com/iCLOTS
 
-Script function that rotates images (.jpg, .png, .tif) or videos (.avi) within a selected directory
---Script maintains aspect ratio of original images
---Addl. dimension added to accommodate original aspect ratio has [0, 0, 0] (black) pixel intensity
+Script function that edits the contrast of images (.jpg, .png, .tif) or videos (.avi)
+within a selected directory
+--Applies two point processes: multiplication and addition with a constant
 
 Input variables
---angle: the angle the frame is rotated
-----Angle value > 0 rotates counterclockwise
-----Angle value < 1 rotates clockwise
+--alpha: the constant each pixel's intensity value is multiplied by
+----Oftentimes called gain
+----Should be >1, controls contrast
+----High values of alpha cause the relatively bright pixels to become even brighter
+----Any value of alpha leaves black pixels as black (value 0)
+--beta: the constant added (or subtracted) from each pixel's intensity value
+----Oftentimes called bias
+---- <1 decreases overall brightness of image, >1 increases overall brightness of image
+----Final pixel intensity values <0 will be saved as black (value 0)
 
 Output files
---All images or videos rotated, provided within a "Rotate" folder within the original directory
+--All images or videos with contrast edited
+----Videos default to .avi save, but option for .mp4 is contained in commented code
+----iCLOTS analyzes only .avi files
+----.mp4 is better suited for viewing on Mac OS
+--Provided within a "Contrast" folder within the original directory
 
 Some tips from the iCLOTS team:
---Aspect ratio is maintained
-----Users can continue to provide the same micron-to-pixel conversion ratio in image analysis apps
---Rotating videos or images such that microfluidic channels are horizontal is crucial for:
-----Applications that rely on left-right indexing, such as microchannel occlusion or velocity profiles
---Rotating videos or images such that microfluidic channels are horizontal is suggested for:
-----One-directional movement quantification, such as deformability or velocity applications
---Rotating images has no affect on morphology measurements
+--Editing contrast can be useful in applications detecting movement
+----Features of interest, like a cell, are more easily distinguished from background, like channels
+--Take care interpreting pixel intensity values after editing contrast
+----Editing contrast may lead to bias in fluoresence-based results
+--See OpenCV tutorial on editing contrast for more information:
+----https://docs.opencv.org/3.4/d3/dc1/tutorial_basic_linear_transform.html
 
 """
 
@@ -37,17 +46,20 @@ import glob
 import datetime
 
 # IMPORTANT: PARAMETERS TO EDIT
-# Resize factor frame dimensions are multiplied by
-angle = 0  # (<0: clockwise, >0: counterclockwise)
+# Multiplication and addition
+alpha = 1  # (<1 decrease contrast, >1 increase contrast)
+beta = 0  # (<0 darken image, >0 brighten image)
 
 # Select directory of files
 dirpath = filedialog.askdirectory()
 
 # Create a directory for saved results including time at which operation was performed
 now = datetime.datetime.now()
-# Create a string to indicate degrees rotated in outputs
-str_angle = str(angle).replace('.', 'p').replace('-', 'n')
-output_folder = dirpath + '/Rotate ' + str_angle + ', ' + now.strftime("%m:%d:%Y, %H.%M.%S")
+# Create strings to indicate operations performed
+str_alpha = str(alpha).replace('.', 'p').replace('-', 'n')
+str_beta = str(beta).replace('.', 'p').replace('-', 'n')
+output_folder = os.path.join(dirpath, 'Contrast a' + str_alpha + ', b' + \
+                str_beta + ', ' + now.strftime("%m_%d_%Y, %H_%M_%S"))
 os.mkdir(output_folder)
 os.chdir(output_folder)
 
@@ -58,49 +70,35 @@ imglist_tif = sorted(glob.glob(dirpath + "/*.tif"))
 imglist = imglist_png + imglist_jpg + imglist_tif
 
 # Create a list of all video files
-videolist = glob.glob(dirpath + '/*.avi')
+videolist = glob.glob(dirpath + '/*.avi')  # .avi
+# videolist = glob.glob(dirpath + '/*.mp4')  # .mp4 (Mac OS)
 
-def rotateframe(frame, w, h):
-    """Function to rotate a frame - can be an image file or a video frame"""
+def editcontrast(frame, w, h):
+    """Function to edit contrast of a frame - can be an image file or a video frame"""
 
-    h_n, w_n = frame.shape[:2]  # Image shape has 3 dimensions
-    image_center = (
-        w / 2,
-        h / 2)  # getRotationMatrix2D needs coordinates in reverse order (width, height) compared to shape
-
-    rotation_mat = cv2.getRotationMatrix2D(image_center, angle, 1.)
-
-    # Rotation calculates the cos and sin, taking absolutes of those.
-    abs_cos = abs(rotation_mat[0, 0])
-    abs_sin = abs(rotation_mat[0, 1])
-
-    # Find the new width and height bounds
-    bound_w = int(h_n * abs_sin + w_n * abs_cos)
-    bound_h = int(h_n * abs_cos + w_n * abs_sin)
-
-    # subtract old image center (bringing image back to origo) and adding the new image center coordinates
-    rotation_mat[0, 2] += bound_w / 2 - image_center[0]
-    rotation_mat[1, 2] += bound_h / 2 - image_center[1]
-
-    # rotate image with the new bounds and translated rotation matrix
-    out_frame = cv2.warpAffine(frame, rotation_mat, (bound_w, bound_h))
+    # Apply changes in contrast
+    out_frame = frame * alpha + beta
+    out_frame[out_frame < 0] = 0
+    out_frame[out_frame > 255] = 255  # Prevents high values from 'looping' to 0 as uint8
+    out_frame = np.uint8(out_frame)  # Prevents video errors
 
     # Ensure dimensions are correct, important for videos
     out_frame = cv2.resize(out_frame, (w, h), fx=0, fy=0, interpolation=cv2.INTER_CUBIC)
 
     return out_frame
 
-# Rotate all images, save
+# Edit contrast of all images, save
 for img in imglist:
     frame = cv2.imread(img)
 
     h, w, l = frame.shape  # Dimensions of frame
 
-    out_frame = rotateframe(frame, w, h)  # Apply function
-    name = os.path.basename(img).split(".")[0] + '_rot_' + str_angle + '.png'  # String to save image as
+    out_frame = editcontrast(frame, w, h)  # Apply function
+    name = os.path.basename(img).split(".")[0] + '_a' + str_alpha + '_b' +\
+           str_beta + '.png'  # String to save image as
     cv2.imwrite(name, out_frame)
 
-# Rotate all videos, save
+# Edit contrast of all videos, save
 for video in videolist:
     capture = cv2.VideoCapture(video)
 
@@ -109,17 +107,21 @@ for video in videolist:
     h = int(np.floor(capture.get(4))) # float
     fps = capture.get(cv2.CAP_PROP_FPS)  # frames per second
 
-    name = os.path.basename(video).split(".")[0] + '_rot_' + str_angle + '.avi'  # String to save image as
+    name = os.path.basename(video).split(".")[0] + '_a' + str_alpha + '_b' + \
+           str_beta + '.avi'  # String to save image as, .avi
+    # name = os.path.basename(video).split(".")[0] + '_a' + str_alpha + '_b' + \
+    #        str_beta + '.mp4'  # String to save image as, .mp4
 
     # Set up video writer object
-    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')  # .avi
+    # fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # .mp4
     out = cv2.VideoWriter(name, fourcc, fps, (w, h))
 
-    # Rotate each frame
+    # Edit contrast of each frame
     while True:
         ret, frame = capture.read()
         if ret == True:
-            out_frame = rotateframe(frame, w, h)
+            out_frame = editcontrast(frame, w, h)
             out.write(out_frame)
         else:
             break
