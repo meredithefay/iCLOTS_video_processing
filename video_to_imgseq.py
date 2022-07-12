@@ -1,12 +1,13 @@
 """iCLOTS is a free software created for the analysis of common hematology workflow image data
 
 Author: Meredith Fay, Lam Lab, Georgia Institute of Technology and Emory University
-Last updated: 2022-05-16
+Last updated: 2022-07-12
 This script corresponds to tools available in version 1.0b1, more recent implementations of tools
 may be available within the iCLOTS software and in source code at github.com/iCLOTS
 
 Script function that converts a single video to a sequence of images
 --No other changes are made to the video frames
+----Videos defaults to .avi input, but option for .mp4 is contained within commented code
 
 No input variables
 
@@ -29,14 +30,15 @@ import os
 import datetime
 
 # Select single file, .avi only
-videoname = filedialog.askopenfilename(filetypes=[(".avi files", "*.avi")])
+# videoname = filedialog.askopenfilename(filetypes=[(".avi files", "*.avi")])  # .avi
+videoname = filedialog.askopenfilename(filetypes=[(".mp4 files", "*.mp4")])  # .mp4
 dirpath = os.path.dirname(videoname)
 name = os.path.basename(videoname).split(".")[0]
 
 # Create a directory for saved results including time at which operation was performed
 now = datetime.datetime.now()
 # Create strings to indicate operations performed
-output_folder = dirpath + '/' + name + ', ' + now.strftime("%m:%d:%Y, %H.%M.%S")
+output_folder = os.path.join(dirpath, name + ', ' + now.strftime("%m_%d_%Y, %H_%M_%S"))
 os.mkdir(output_folder)
 os.chdir(output_folder)
 

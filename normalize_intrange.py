@@ -1,7 +1,7 @@
 """iCLOTS is a free software created for the analysis of common hematology workflow image data
 
 Author: Meredith Fay, Lam Lab, Georgia Institute of Technology and Emory University
-Last updated: 2022-05-16
+Last updated: 2022-07-12
 This script corresponds to tools available in version 1.0b1, more recent implementations of tools
 may be available within the iCLOTS software and in source code at github.com/iCLOTS
 
@@ -43,7 +43,7 @@ dirpath = filedialog.askdirectory()
 # Create a directory for saved results including time at which operation was performed
 now = datetime.datetime.now()
 # Create strings to indicate operations performed
-output_folder = dirpath + '/Normalized, ' + now.strftime("%m:%d:%Y, %H.%M.%S")
+output_folder = os.path.join(dirpath, 'Normalized, ' + now.strftime("%m_%d_%Y, %H_%M_%S"))
 os.mkdir(output_folder)
 os.chdir(output_folder)
 
@@ -59,8 +59,9 @@ def normalize(image):
     h, w, l = image.shape  # Dimensions of frame
 
     for i in range(l):  # For each layer
+        if l != 1:
         # Normalize
-        image[l] = (image[l] - np.amin(image))/(np.amax(image) - np.amin(image)) * 255
+            image[l] = (image[l] - np.amin(image))/(np.amax(image) - np.amin(image)) * 255
 
     out_image = image
 

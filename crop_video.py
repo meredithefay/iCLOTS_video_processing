@@ -1,7 +1,7 @@
 """iCLOTS is a free software created for the analysis of common hematology workflow image data
 
 Author: Meredith Fay, Lam Lab, Georgia Institute of Technology and Emory University
-Last updated: 2022-05-16
+Last updated: 2022-07-12
 This script corresponds to tools available in version 1.0b1, more recent implementations of tools
 may be available within the iCLOTS software and in source code at github.com/iCLOTS
 
@@ -15,6 +15,9 @@ Input variables
 Output files
 --All videos with frames cropped to same range
 --Provided within a "Cropped" folder within the original directory
+----Videos default to .avi save, but option for .mp4 is contained in commented code
+----iCLOTS analyzes only .avi files
+----.mp4 is better suited for viewing on Mac OS
 
 Some tips from the iCLOTS team:
 --This script is most useful for:
@@ -51,14 +54,15 @@ now = datetime.datetime.now()
 # Create strings to indicate operations performed
 str_start = str(start_frame)
 str_end = str(end_frame)
-output_folder = dirpath + '/Cropped i' + str_start + ', f' + \
-                str_end + ', ' + now.strftime("%m:%d:%Y, %H.%M.%S")
+output_folder = os.path.join(dirpath, 'Cropped i' + str_start + ', f' + \
+                str_end + ', ' + now.strftime("%m_%d_%Y, %H_%M_%S"))
 os.mkdir(output_folder)
 os.chdir(output_folder)
 
 
 # Create a list of all video files
-videolist = glob.glob(dirpath + '/*.avi')  # Script only applies to video files
+videolist = glob.glob(dirpath + '/*.avi')  # Script only applies to video files, .avi
+# videolist = glob.glob(dirpath + '/*.mp4')  # .mp4 (Mac OS)
 
 
 # Crop all videos, save
@@ -71,10 +75,13 @@ for video in videolist:
     fps = capture.get(cv2.CAP_PROP_FPS)  # frames per second
 
     name = os.path.basename(video).split(".")[0] + '_i' + str_start + '_f' + \
-           str_end + '.avi'  # String to save image as
+           str_end + '.avi'  # String to save image as, .avi
+    # name = os.path.basename(video).split(".")[0] + '_i' + str_start + '_f' + \
+    #        str_end + '.mp4'  # String to save image as, .mp4
 
     # Set up video writer object
-    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')  # .avi
+    # fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # .mp4
     out = cv2.VideoWriter(name, fourcc, fps, (w, h))
 
     # Only write frames within range

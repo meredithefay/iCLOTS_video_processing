@@ -1,7 +1,7 @@
 """iCLOTS is a free software created for the analysis of common hematology workflow image data
 
 Author: Meredith Fay, Lam Lab, Georgia Institute of Technology and Emory University
-Last updated: 2022-05-16
+Last updated: 2022-07-12
 This script corresponds to tools available in version 1.0b1, more recent implementations of tools
 may be available within the iCLOTS software and in source code at github.com/iCLOTS
 
@@ -13,6 +13,9 @@ Input variables
 
 Output files
 --One single video made from all images within the selected directory
+----Videos default to .avi save, but option for .mp4 is contained in commented code
+----iCLOTS analyzes only .avi files
+----.mp4 is better suited for viewing on Mac OS
 ----Video uses directory name as filename
 ------Avoid spaces, punctuation within directory name
 
@@ -45,7 +48,7 @@ dirpath = filedialog.askdirectory()
 now = datetime.datetime.now()
 # Create strings to indicate operations performed
 str_fps = str(fps).replace('.', 'p')
-output_folder = dirpath + '/Video, fps ' + str_fps + ', ' + now.strftime("%m:%d:%Y, %H.%M.%S")
+output_folder = os.path.join(dirpath, 'Video, fps ' + str_fps + ', ' + now.strftime("%m_%d_%Y, %H_%M_%S"))
 os.mkdir(output_folder)
 os.chdir(output_folder)
 
@@ -64,10 +67,12 @@ for imgname in imglist:
 # Set up video writer
 h, w, l = img.shape  # Dimensions of frame, use last called
 
-name = os.path.basename(dirpath) + '_fps_' + str_fps + '.avi'  # String to save new video as
+name = os.path.basename(dirpath) + '_fps_' + str_fps + '.avi'  # String to save new video as, .avi
+# name = os.path.basename(dirpath) + '_fps_' + str_fps + '.mp4'  # String to save new video as, .mp4
 
 # Set up video writer object
-fourcc = cv2.VideoWriter_fourcc(*'XVID')
+fourcc = cv2.VideoWriter_fourcc(*'XVID')  # .avi
+# fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # .mp4
 out = cv2.VideoWriter(name, fourcc, fps, (w, h))
 
 # Add frames to videowriter

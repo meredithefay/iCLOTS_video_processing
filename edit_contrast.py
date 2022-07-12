@@ -1,7 +1,7 @@
 """iCLOTS is a free software created for the analysis of common hematology workflow image data
 
 Author: Meredith Fay, Lam Lab, Georgia Institute of Technology and Emory University
-Last updated: 2022-05-16
+Last updated: 2022-07-12
 This script corresponds to tools available in version 1.0b1, more recent implementations of tools
 may be available within the iCLOTS software and in source code at github.com/iCLOTS
 
@@ -22,6 +22,9 @@ Input variables
 
 Output files
 --All images or videos with contrast edited
+----Videos default to .avi save, but option for .mp4 is contained in commented code
+----iCLOTS analyzes only .avi files
+----.mp4 is better suited for viewing on Mac OS
 --Provided within a "Contrast" folder within the original directory
 
 Some tips from the iCLOTS team:
@@ -55,8 +58,8 @@ now = datetime.datetime.now()
 # Create strings to indicate operations performed
 str_alpha = str(alpha).replace('.', 'p').replace('-', 'n')
 str_beta = str(beta).replace('.', 'p').replace('-', 'n')
-output_folder = dirpath + '/Contrast a' + str_alpha + ', b' + \
-                str_beta + ', ' + now.strftime("%m:%d:%Y, %H.%M.%S")
+output_folder = os.path.join(dirpath, 'Contrast a' + str_alpha + ', b' + \
+                str_beta + ', ' + now.strftime("%m_%d_%Y, %H_%M_%S"))
 os.mkdir(output_folder)
 os.chdir(output_folder)
 
@@ -67,7 +70,8 @@ imglist_tif = sorted(glob.glob(dirpath + "/*.tif"))
 imglist = imglist_png + imglist_jpg + imglist_tif
 
 # Create a list of all video files
-videolist = glob.glob(dirpath + '/*.avi')
+videolist = glob.glob(dirpath + '/*.avi')  # .avi
+# videolist = glob.glob(dirpath + '/*.mp4')  # .mp4 (Mac OS)
 
 def editcontrast(frame, w, h):
     """Function to edit contrast of a frame - can be an image file or a video frame"""
@@ -104,10 +108,13 @@ for video in videolist:
     fps = capture.get(cv2.CAP_PROP_FPS)  # frames per second
 
     name = os.path.basename(video).split(".")[0] + '_a' + str_alpha + '_b' + \
-           str_beta + '.avi'  # String to save image as
+           str_beta + '.avi'  # String to save image as, .avi
+    # name = os.path.basename(video).split(".")[0] + '_a' + str_alpha + '_b' + \
+    #        str_beta + '.mp4'  # String to save image as, .mp4
 
     # Set up video writer object
-    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')  # .avi
+    # fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # .mp4
     out = cv2.VideoWriter(name, fourcc, fps, (w, h))
 
     # Edit contrast of each frame
