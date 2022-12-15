@@ -28,7 +28,7 @@ Outputs:
   - Each file has some indicator of the operation applied appended to the original file name
 
 ## Help and contributing
-Contributions are always welcome! Submit a pull request or contact me directly at mfay7@gatech.edu. Please also feel free to reach out via email for assistance. 
+Contributions are always welcome! Submit a pull request or contact me directly at meredith.e.fay@gmail.com.
 
 ## References
 OpenCV:
